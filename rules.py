@@ -31,7 +31,7 @@ class ReservedWordsRule(RuleInterface):
 
   def regex_rules(self) -> list[str]:
     return [
-      r'\bNOT\b',r'\bTHEN\b',r'\bDO\b',r'\bOOD\b',r'\bEVEN\b',r'\bPROCEDURE\b'
+      r'\bNOT\b',r'\bTHEN\b',r'\bDO\b',r'\bODD\b',r'\bEVEN\b',r'\bPROCEDURE\b',r'\bEND\b'
     ]
 
   def extract_token(self, match: str) -> Token:
@@ -93,3 +93,11 @@ class StatementRule(RuleInterface):
 
     def extract_token(self, match: str) -> Token:
         return Token(TokenClass.STATEMENT, match)
+    
+class CommentRule(RuleInterface):
+   
+   def regex_rules(self) -> list[str]:
+      return [r"\{e\}(.*?)\{e\}"]
+   
+   def extract_token(self, match: str) -> Token:
+      return Token(TokenClass.COMMENT, match)

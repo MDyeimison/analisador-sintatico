@@ -11,6 +11,7 @@ class TokenClass(Enum):
   KEYWORD = 7,
   RELATION = 8,
   SIGN = 9,
+  COMMENT = 10,
 
 class Token:
 

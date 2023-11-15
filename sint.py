@@ -1,264 +1,347 @@
 from lex import Lex
 import rules
-from token import TokenClass
-
+import copy
 
 class Parser:
-    def __init__(self, lexer):
+    def __init__(self, lexer, token_list, buffer=0):
         self.lexer = lexer
-        self.buffer = []
-
-    def next_token(self):
-        if self.buffer:
-            return self.buffer.pop(0)
-        return self.lexer.next()
-
-    def peek(self):
-        if not self.buffer:
-            self.buffer.append(self.lexer.next())
-        return self.buffer[0]
-
-    def expect(self, expected_token_value):
-        token = self.lexer.next()
-        return token and token.token_value == expected_token_value
-
+        self.buffer = buffer
+        self.token_list = token_list
+    
+    def current_token(self):
+        return self.token_list[self.buffer]
+    
     def parse_program(self):
+        print(f'parse_program: {self.current_token()}')
         if self.parse_block():
-            return self.expect('.')
+            return self.current_token().token_value == '.'
         return False
-
+    
     def parse_block(self):
-        if not self.parse_variables():
-            return False
-        if not self.parse_constants():
-            return False
-        if not self.parse_procedures():
-            return False
-        return self.parse_statement()
-
-    def parse_statement(self):
-        # Placeholder for statement parsing
-        # Implement the actual statement parsing logic here
-        # Returning True for the sake of example
-        return True
-
-################################################################S
-
-    def parse_constants(self):
-        token = self.lexer.next()
-        if token and token.token_value == "CONST":
-            if not self.parse_constdecl():
+        print(f'parse_block: {self.current_token()}')
+        count = 0
+        initial_index = copy.deepcopy(self.buffer)
+        if self.current_token().token_value == 'CONST':
+            if not self.token_list[0].token_value == 'CONST':
                 return False
-            return self.expect(';')
-        # No 'CONST' token, so this part is optional
-        return True
-
-    def parse_constdecl(self):
-        # Implement this method based on the grammar rule for <constdecl>
-        pass
-
-    def parse_variables(self):
-        token = self.lexer.next()
-        if token and token.token_value == "VAR":
-            if not self.parse_vardecl():
+            self.buffer+=1
+            if not self.parse_constants():
                 return False
-            return self.expect(';')
-        # No 'VAR' token, so this part is optional
-        return True
+            count+=1
 
-    def parse_procedures(self):
-        while True:
-            token = self.lexer.peek()  # 'peek' does not consume the token
-            if not token or token.token_value != "PROCEDURE":
-                break
-            if not self.parse_procdecl():
+        if self.current_token().token_value == 'VAR':
+            if not self.parse_variables():
                 return False
-        return True
+            count+=1
 
-    def parse_procdecl(self):
-        # Implement based on the grammar rule for <procdecl>
-        pass
-
-    def parse_statement(self):
-        # This will be more complex as <statement> might have multiple forms
-        token = self.lexer.peek()
-        if not token:
-            return False
-        if token.token_value == "IF":
-            return self.parse_if_statement()
-        elif token.token_value == "WHILE":
-            return self.parse_while_statement()
-        # ... handle other types of statements
-        else:
-            return False
-
-    def parse_while_statement(self):
-        # Implement based on the grammar rule for 'while' statements
-        pass
-
-    def parse_expression(self):
-        if not self.parse_term():
-            return False
-        while True:
-            token = self.lexer.peek()
-            if token and token.token_value in ["+", "-"]:
-                self.lexer.next()  # Consume the '+' or '-' token
-                if not self.parse_term():
-                    return False
-            else:
-                break
-        return True
-
-    def parse_term(self):
-        # Implement based on the grammar rule for <term>
-        pass
-
-    def parse_compound_statement(self):
-        if not self.expect('BEGIN'):
-            return False
-
-        while True:
+        if self.current_token().token_value == 'PROCEDURE':
+            if not self.parse_procedures():
+                return False
+            count+=1
+        
+        if self.current_token().token_class.name in ['STATEMENT','IDENTIFIER']:
             if not self.parse_statement():
                 return False
+            count+=1
 
-            # Assuming ';' is used to separate statements
-            next_token = self.lexer.peek()
-            if not next_token or next_token.token_value != ';':
-                break
-            self.lexer.next()  # Consume the ';' token
-
-        return self.expect('END')
-
-    def parse_factor(self):
-        token = self.lexer.next()
-        if token.token_class == TokenClass.NUMBER or token.token_class == TokenClass.IDENTIFIER:
+        if (count == 0 and self.buffer == initial_index) or count >= 0:
             return True
-        elif token.token_value == '(':
-            if not self.parse_expression():
-                return False
-            return self.expect(')')
         return False
-
-    def parse_terms(self):
-        if not self.parse_term():
-            return False
-        while True:
-            token = self.lexer.peek()
-            if token and token.token_value in ['*', '/']:
-                self.lexer.next()  # Consume the operator
-                if not self.parse_term():
-                    return False
-            else:
-                break
-        return True
-
-
-    def parse_condition(self):
-        # Implement based on the grammar rule for <condition>
-        pass
-
-    def parse_sign(self):
-        token = self.lexer.peek()
-        if token and token.token_value in ['+', '-']:
-            self.lexer.next()  # Consume the sign
-        return self.parse_expression()
-
-    def parse_constdef(self):
-        token = self.lexer.next()
-        if token.token_class != TokenClass.IDENTIFIER:
-            return False
-
-        if not self.expect('='):
-            return False
-
-        return self.expect_number()
+    
+    def parse_variables(self):
+        print(f'1 parse_variables: {self.current_token()}')
+        if (self.current_token().token_value == 'VAR'):
+            self.buffer+=1
+            print(f'2 parse_variables: {self.current_token()}')
+            if self.parse_vardecl():
+                print(f'3 parse_variables: {self.current_token()}')
+                if self.current_token().token_value == ';':
+                    self.buffer+=1
+                    print(f'4 parse_variables: {self.current_token()}')
+                    return True
+        return False
     
     def parse_vardecl(self):
-        token = self.lexer.next()
-        if token.token_class == TokenClass.IDENTIFIER:
-            print('aloha')
-            token = self.lexer.next()
-            if token.token_class == TokenClass.SYMBOL:
-                self.parse_vardecl()
-        # if not self.expect_identifier():
-            return False
-
-        while True:
-            token = self.lexer.peek()
-            if token and token.token_value == ',':
-                self.lexer.next()  # Consume the comma
-                if not self.expect(','):
+        print(f'1 parse_vardecl: {self.current_token()}')
+        if self.current_token().token_class.name == 'IDENTIFIER':
+            self.buffer+=1
+            print(f'2 parse_vardecl: {self.current_token()}')
+            if self.current_token().token_value == ',':
+                self.buffer+=1
+                print(f'3 parse_vardecl: {self.current_token()}')
+                if not self.parse_vardecl():
                     return False
-            else:
-                break
-        return True
+                print(f'4 parse_vardecl: {self.current_token()}')
+            return True
+        return False
 
-    def parse_vardecl(self):
-        if not self.expect(','):
+    def parse_statement(self):
+        if self.current_token().token_class.name == 'IDENTIFIER':
+            print(f'1 parse_statement IDENTIFIER: {self.current_token()}')
+            self.buffer+=1
+            print(f'2 parse_statement IDENTIFIER: {self.current_token()}')
+            if self.current_token().token_value == '<-':
+                self.buffer+=1
+                print(f'3 parse_statement IDENTIFIER: {self.current_token()}')
+                if self.parse_expression():
+                    print(f'4 parse_statement IDENTIFIER: {self.current_token()}')
+                    return True
             return False
 
-        while True:
-            token = self.lexer.peek()
-            if token and token.token_value == ',':
-                self.lexer.next()  # Consume the comma
-                if not self.expect(','):
+        if self.current_token().token_value == 'CALL':
+            self.buffer+=1
+            if self.current_token().token_class.name == 'IDENTIFIER':
+                self.buffer+=1
+                return True
+            return False
+            
+        if self.current_token().token_value == 'BEGIN':
+            print(f'1 parse_statement BEGIN: {self.current_token()}')
+            self.buffer+=1
+            if self.current_token().token_class.name in ['STATEMENT','IDENTIFIER']:
+                print(f'2 parse_statement BEGIN: {self.current_token()}')
+                if not self.parse_compound_statement():
                     return False
-            else:
-                break
-        return True
-
-    def parse_if_statement(self):
-        if not self.expect('IF'):
+            if self.current_token().token_value == 'END':
+                print(f'3 parse_statement BEGIN: {self.current_token()}')
+                self.buffer+=1
+                print(f'4 parse_statement BEGIN: {self.current_token()}')
+                return True
             return False
 
-        if not self.parse_condition():
+        if self.current_token().token_value == 'IF':
+            self.buffer+=1
+            if self.current_token().token_value == 'NOT':
+                self.buffer+=1
+            if self.parse_condition():
+                if self.current_token().token_value == 'THEN':
+                    self.buffer+=1
+                    if self.parse_statement():
+                        return True
             return False
 
-        if not self.expect('THEN'):
+        if self.current_token().token_value == 'WHILE':
+            self.buffer+=1
+            if self.current_token().token_value == 'NOT':
+                self.buffer+=1
+            if self.parse_condition():
+                if self.current_token().token_value == 'DO':
+                    self.buffer+=1
+                    if self.parse_statement():
+                        return True
             return False
 
-        if not self.parse_statement():
+        if self.current_token().token_value == 'PRINT':
+            self.buffer+=1
+            if self.parse_expression():
+                return True
             return False
+    
+    def parse_procedures(self):
+        print(f'1 parse_procedures: {self.current_token()}')
+        if self.parse_procdecl():
+            print(f'2 cai prodecl: {self.current_token()}')
+            if self.current_token().token_value == 'PROCEDURE':
+                if self.parse_procedures():
+                    print(f'3 cai procedures: {self.current_token()}')
+                    return True
+            return True
+        return False
 
-        if self.lexer.peek().token_value == 'ELSE':
-            self.lexer.next()  # Consume 'ELSE'
-            return self.parse_statement()
+    def parse_procdecl(self):
+        print(f'1 parse_procdecl: {self.current_token()}')
+        if self.current_token().token_value == 'PROCEDURE':
+            self.buffer+=1
+            print(f'2 parse_procdecl: {self.current_token()}')
+            if self.current_token().token_class.name == 'IDENTIFIER':
+                self.buffer+=1
+                print(f'3 parse_procdecl: {self.current_token()}')
+                if self.current_token().token_value == ';':
+                    self.buffer+=1
+                    print(f'4 parse_procdecl: {self.current_token()}')
+                    if self.parse_block():
+                        print(f'5 parse_procdecl: {self.current_token()}')
+                        if self.current_token().token_value == ';':
+                            self.buffer+=1
+                            print(f'6 parse_procdecl: {self.current_token()}')
+                            return True
+                        print(f'\033[91m\nERROR IN PARSE_PROCDECL: {self.current_token()}\033[0m')
+                    print(f'\033[91m\nERROR IN PARSE_PROCDECL: {self.current_token()}\033[0m')
+        return False
+    
+    def parse_compound_statement(self):
+        print(f'1 parse_compound_statement: {self.current_token()}')
+        if self.parse_statement():
+            print(f'2 parse_compound_statement: {self.current_token()}')
+            if self.current_token().token_value == ';':
+                print(f'3 parse_compound_statement: {self.current_token()}')
+                self.buffer+=1
+                if self.current_token().token_class.name in ['STATEMENT','IDENTIFIER']:
+                    print(f'4 parse_compound_statement: {self.current_token()}')
+                    if not self.parse_compound_statement():
+                        return False
+                return True
+        return False
+    
+    def parse_expression(self):
+        print(f'1 parse_expression: {self.current_token()}')
+        if self.current_token().token_class.name == 'SIGN':
+            if not self.parse_sign(self):
+                return False
+        print(f'2 parse_expression: {self.current_token()}')
+        if self.parse_term():
+            print(f'3 parse_expression: {self.current_token()}')
+            if self.current_token().token_class.name == 'SIGN':
+                print(f'4 parse_expression: {self.current_token()}')
+                if not self.parse_terms():
+                    return False
+                print(f'5 parse_expression: {self.current_token()}')
+            return True
+        return False
+        
+    def parse_sign(self):
+        print(f'1 parse_sign: {self.current_token()}')
+        if self.current_token().token_class.name == 'SIGN':
+            self.buffer+=1
+            print(f'2 parse_sign: {self.current_token()}')
+            return True
+        return False
+    
+    def parse_term(self):
+        print(f'1 parse_term: {self.token_list[self.buffer]}')
+        if self.parse_factor():
+            print(f'2 parse_term: {self.token_list[self.buffer]}')
+            if self.current_token().token_value in ['*','/']:
+                if not self.parse_factors():
+                    return False
+                print(f'3 parse_term: {self.token_list[self.buffer]}')
+            return True
+        return False
+    
+    def parse_terms(self):
+        print(f'1 parse_terms: {self.current_token()}')
+        if self.current_token().token_class.name == 'SIGN':
+            self.buffer+=1
+            print(f'2 parse_terms: {self.current_token()}')
+            if self.parse_term():
+                print(f'3 parse_terms: {self.current_token()}')
+                return True
+        return False
+    
+    def parse_factor(self):
+        print(f'1 parse_factor: {self.current_token()}')
+        if self.current_token().token_class.name in ['IDENTIFIER','NUMBER']:
+            self.buffer+=1
+            return True
+        print(f'2 parse_factor: {self.current_token()}')
+        if self.current_token().token_value == '(':
+            self.buffer+=1
+            print(f'3 parse_factor: {self.current_token()}')
+            if self.parse_expression():
+                print(f'4 parse_factor: {self.current_token()}')
+                if self.current_token().token_value == ')':
+                    self.buffer+=1
+                    print(f'5 parse_factor: {self.current_token()}')
+                    return True
+        return False
+    
+    def parse_factors(self):
+        print(f'1 parse_factors: {self.current_token()}')
+        if self.current_token().token_value in ['/','*']:
+            self.buffer+=1
+            print(f'2 parse_factors: {self.current_token()}')
+            if self.parse_factor():
+                print(f'3 parse_factors: {self.current_token()}')
+                return True
+        return False
+    
+    def parse_condition(self):
+        print(f'parse_condition: {self.current_token()}')
+        if self.current_token().token_value in ['ODD','EVEN']:
+            self.buffer+=1
+            if self.parse_expression():
+                return True
+            return False
+        if self.parse_expression():
+            if self.parse_relation():
+                if self.parse_expression():
+                    return True
+        return False
+    
+    def parse_relation(self):
+        print(f'1 parse_relation: {self.current_token()}')
+        if self.current_token().token_class.name == 'RELATION':
+            self.buffer+=1
+            print(f'2 parse_relation: {self.current_token()}')
+            return True
+        return False
 
-        return True
+    def parse_constants(self):
+        print(f'1 parse_constants: {self.current_token()}')
+        if self.parse_constdecl():
+            print(f'2 parse_constants: {self.current_token()}')
+            if self.current_token().token_value == ';':
+                self.buffer+=1
+                print(f'3 parse_constants: {self.current_token()}')
+                return True
+        return False
+
+    def parse_constdecl(self):
+        print(f'1 parse_constdecl: {self.current_token()}')
+        if self.parse_constdef():
+            print(f'2 parse_constdecl: {self.current_token()}')
+            if self.current_token().token_value == ',':
+                self.buffer+=1
+                print(f'3 parse_constdecl: {self.current_token()}')
+                if not self.parse_constdecl():
+                    return False
+                print(f'4 parse_constdecl: {self.current_token()}')
+            return True
+        
+    def parse_constdef(self):
+        print(f'1 parse_constdef: {self.current_token()}')
+        if (self.current_token().token_class.name == 'IDENTIFIER'):
+            self.buffer+=1
+            print(f'2 parse_constdef: {self.current_token()}')
+            if (self.current_token().token_value == '='):
+                self.buffer+=1
+                print(f'3 parse_constdef: {self.current_token()}')
+                if (self.current_token().token_class.name == 'NUMBER'):
+                    self.buffer+=1
+                    print(f'4 parse_constdef: {self.current_token()}')
+                    return True
+        return False
+    
 
 
 diretorio = './arquivos/'
 with open('./testes/' + 'ex2.pl0mod.txt', 'r') as arquivo:
     content = arquivo.read()
 
-print('parsing content')
-print(content)
-print('\n\n')
-
 lex = Lex(content, [ \
+    rules.CommentRule(), \
+    rules.SignRule(), \
     rules.KeywordRule(), \
     rules.NumberRule(), \
     rules.StatementRule(), \
+    rules.SymbolRule(), \
     rules.RelationRule(), \
     rules.FactorsRule(), \
-    rules.SymbolRule(), \
     rules.ReservedWordsRule(), \
     rules.IdentifierRule(), \
     ])
 
-
-# Example usage
-example_tokens = []  # Placeholder for actual tokens from the lexical analyzer
-parser = Parser(lex)
-
-# Parse the program
-result = parser.parse_program()
-print(result)  # True or False depending on whether the parsing was successful
-input()
-
-
+token_list = []
 while True:
   token_atual = lex.next()
   if token_atual is None:
     break
-  print(f'\ntoken extraido: {token_atual}\n\n\n')
+  if not token_atual.token_class.name == 'COMMENT':
+    token_list.append(token_atual)
+[print(e) for e in token_list if e != None]
+print(f"\n\n###############################################\n\n")
+parser = Parser(lex, token_list)
+if parser.parse_program():
+    print("\n:)")
+else:
+    print(f"\033[91m\nSOMETHING WENT WHONG\033[0m")
