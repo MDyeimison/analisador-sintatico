@@ -10,7 +10,7 @@ class TokenClass(Enum):
   STATEMENT = 6,
   KEYWORD = 7,
   RELATION = 8,
-  # MULT = 9,
+  SIGN = 9,
 
 class Token:
 

@@ -12,18 +12,23 @@ print('\n\n')
 lex = Lex(content, [ \
     rules.KeywordRule(), \
     rules.NumberRule(), \
+    rules.SymbolRule(), \
     rules.StatementRule(), \
     rules.RelationRule(), \
     rules.FactorsRule(), \
-    rules.SymbolRule(), \
+    rules.SignRule(), \
     rules.ReservedWordsRule(), \
     rules.IdentifierRule(), \
     ])
 
+teste = []
 while True:
   token_atual = lex.next()
+  teste.append(token_atual)
   if token_atual is None:
     break
   print(token_atual.token_value)
   print(f'\ntoken extraido: {token_atual}\n\n\n')
-  input()
+  #input()
+print(teste[0].token_class.name)
+print(teste[0].token_value)

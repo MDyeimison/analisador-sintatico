@@ -31,7 +31,7 @@ class ReservedWordsRule(RuleInterface):
 
   def regex_rules(self) -> list[str]:
     return [
-      r'\bCALL\b',r'\bBEGIN\b',r'\bIF\b',r'\bNOT\b',r'\bTHEN\b',r'\bWHILE\b',r'\bDO\b',r'\bPRINT\b',r'\bOOD\b',r'\bEVEN\b',r'\bPROCEDURE\b'
+      r'\bNOT\b',r'\bTHEN\b',r'\bDO\b',r'\bOOD\b',r'\bEVEN\b',r'\bPROCEDURE\b'
     ]
 
   def extract_token(self, match: str) -> Token:
@@ -49,12 +49,18 @@ class KeywordRule(RuleInterface):
 class SymbolRule(RuleInterface):
 
     def regex_rules(self) -> list[str]:
-        return [r'\+', r'\-',r'\,',r'\;']
+        return [r'\,',r'\;',r'<-']
 
     def extract_token(self, match: str) -> Token:
         return Token(TokenClass.SYMBOL, match)
 
+class SignRule(RuleInterface):
 
+  def regex_rules(self) -> list[str]:
+        return [r'\+', r'\-']
+
+  def extract_token(self, match: str) -> Token:
+      return Token(TokenClass.SIGN, match)
 class FactorsRule(RuleInterface):
 
     def regex_rules(self) -> list[str]:
@@ -83,7 +89,7 @@ class IdentifierRule(RuleInterface):
 class StatementRule(RuleInterface):
 
     def regex_rules(self) -> list[str]:
-        return [r'\<\-']
+        return [r'\bCALL\b',r'\bBEGIN\b',r'\bIF\b',r'\bWHILE\b',r'\bPRINT\b']
 
     def extract_token(self, match: str) -> Token:
         return Token(TokenClass.STATEMENT, match)

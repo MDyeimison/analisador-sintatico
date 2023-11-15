@@ -28,9 +28,9 @@ class Parser:
         return False
 
     def parse_block(self):
-        if not self.parse_constants():
-            return False
         if not self.parse_variables():
+            return False
+        if not self.parse_constants():
             return False
         if not self.parse_procedures():
             return False
@@ -174,28 +174,34 @@ class Parser:
         return self.expect_number()
     
     def parse_vardecl(self):
-        if not self.expect_identifier():
+        token = self.lexer.next()
+        if token.token_class == TokenClass.IDENTIFIER:
+            print('aloha')
+            token = self.lexer.next()
+            if token.token_class == TokenClass.SYMBOL:
+                self.parse_vardecl()
+        # if not self.expect_identifier():
             return False
 
         while True:
             token = self.lexer.peek()
             if token and token.token_value == ',':
                 self.lexer.next()  # Consume the comma
-                if not self.expect_identifier():
+                if not self.expect(','):
                     return False
             else:
                 break
         return True
 
     def parse_vardecl(self):
-        if not self.expect_identifier():
+        if not self.expect(','):
             return False
 
         while True:
             token = self.lexer.peek()
             if token and token.token_value == ',':
                 self.lexer.next()  # Consume the comma
-                if not self.expect_identifier():
+                if not self.expect(','):
                     return False
             else:
                 break
@@ -222,7 +228,7 @@ class Parser:
 
 
 diretorio = './arquivos/'
-with open('./testes/' + 'ex4.pl0mod.txt', 'r') as arquivo:
+with open('./testes/' + 'ex2.pl0mod.txt', 'r') as arquivo:
     content = arquivo.read()
 
 print('parsing content')
