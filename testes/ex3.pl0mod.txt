@@ -1,6 +1,6 @@
 CONST max = 100;
 VAR arg, ret;
-{e}TESTE COMMENT{e}
+{teste}
 PROCEDURE checkprime;
 VAR i;
 BEGIN
@@ -16,7 +16,6 @@ BEGIN
     i <- i + 1;
   END;
 END;
-{e}TESTE COMMENT{e}
 PROCEDURE primes;
 BEGIN
   arg <- 2;

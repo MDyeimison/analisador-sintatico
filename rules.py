@@ -97,7 +97,7 @@ class StatementRule(RuleInterface):
 class CommentRule(RuleInterface):
    
    def regex_rules(self) -> list[str]:
-      return [r"\{e\}(.*?)\{e\}"]
+      return [r"\{([^}]*)\}"]
    
    def extract_token(self, match: str) -> Token:
       return Token(TokenClass.COMMENT, match)

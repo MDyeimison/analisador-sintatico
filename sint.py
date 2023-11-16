@@ -338,6 +338,8 @@ while True:
     break
   if not token_atual.token_class.name == 'COMMENT':
     token_list.append(token_atual)
+  else:
+      print(f'\033[91m', token_atual ,'\033[0m')
 [print(e) for e in token_list if e != None]
 print(f"\n\n###############################################\n\n")
 parser = Parser(lex, token_list)

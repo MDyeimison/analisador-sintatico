@@ -1,11 +1,12 @@
 VAR x, squ;
-
+{teste}
 PROCEDURE square;
 BEGIN
   squ <- x * x;
 END;
-
+{teste}
 BEGIN
+{teste}
   x <- 1;
   WHILE x <= 10 DO
   BEGIN
