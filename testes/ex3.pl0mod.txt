@@ -1,6 +1,5 @@
-CONST max = 100;
+CONST max = 100, min = 100;
 VAR arg, ret;
-{e}TESTE COMMENT{e}
 PROCEDURE checkprime;
 VAR i;
 BEGIN
@@ -16,12 +15,11 @@ BEGIN
     i <- i + 1;
   END;
 END;
-{e}TESTE COMMENT{e}
 PROCEDURE primes;
 BEGIN
   arg <- 2;
   WHILE arg < max DO
-  BEGIN;
+  BEGIN
     CALL checkprime;
     IF ret = 1 THEN PRINT arg;
     arg <- arg + 1;
