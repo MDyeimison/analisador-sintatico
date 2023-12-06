@@ -13,8 +13,10 @@ class Parser:
     
     def parse_program(self):
         print(f'parse_program: {self.current_token()}')
-        if self.parse_block():
-            return self.current_token().token_value == '.'
+        parse_block = self.parse_block()
+        if parse_block:
+            if self.current_token().token_value == '.':
+                return f'{parse_block}'
         return False
     
     def parse_block(self):
@@ -29,7 +31,7 @@ class Parser:
             parse_constants = self.parse_constants()
             if not parse_constants:
                 return False
-            parse_block = f'{parse_block}\n{parse_constants}'
+            parse_block = f'{parse_block}\n{parse_constants}\n'
             print(f'\033[94mCONST {parse_constants}\033[0m')
             input()
             count+=1
@@ -38,7 +40,8 @@ class Parser:
             parse_variables = self.parse_variables()
             if not parse_variables:
                 return False
-            parse_block = f'{parse_block}\n{parse_variables}'
+            #parse_block = f'{parse_block}\n{parse_variables}\n'
+            parse_block = f'{parse_block}\n{parse_variables}\n'
             print(f'\033[94mVAR {parse_variables}\033[0m')
             input()
             count+=1
@@ -47,7 +50,7 @@ class Parser:
             parse_procedures = self.parse_procedures()
             if not parse_procedures:
                 return False
-            parse_block = f'{parse_block}\n{parse_procedures}'
+            parse_block = f'{parse_block}\n{parse_procedures}\n'
             print(f'\033[94m{parse_procedures}\033[0m')
             input()
             count+=1
@@ -56,13 +59,13 @@ class Parser:
             parse_statement = self.parse_statement()
             if not parse_statement:
                 return False
-            parse_block = f'{parse_block}\n{parse_statement}'
+            parse_block = f'{parse_block}\n{parse_statement}\n'
             print(f'\033[94m{parse_statement}\033[0m')
             input()
             count+=1
 
         if (count == 0 and self.buffer == initial_index) or count >= 0:
-            return True
+            return f'{parse_block}'
         return False
     
     def parse_variables(self):
@@ -70,19 +73,20 @@ class Parser:
         if (self.current_token().token_value == 'VAR'):
             self.buffer+=1
             print(f'2 parse_variables: {self.current_token()}')
-            parse_vardecl = self.parse_vardecl()
+            parse_vardecl = f'{self.parse_vardecl()}'
             if parse_vardecl:
                 print(f'3 parse_variables: {self.current_token()}')
                 if self.current_token().token_value == ';':
                     self.buffer+=1
                     print(f'4 parse_variables: {self.current_token()}')
-                    return f'{parse_vardecl};'
+                    # return f'VAR {parse_vardecl};'
+                    return f'{parse_vardecl}'
         return False
     
     def parse_vardecl(self):
         print(f'1 parse_vardecl: {self.current_token()}')
         if self.current_token().token_class.name == 'IDENTIFIER':
-            identifier = self.current_token().token_value
+            identifier = f'{self.current_token().token_value} = 0'
             self.buffer+=1
             print(f'2 parse_vardecl: {self.current_token()}')
             if self.current_token().token_value == ',':
@@ -98,67 +102,92 @@ class Parser:
 
     def parse_statement(self):
         if self.current_token().token_class.name == 'IDENTIFIER':
+            identifier = self.current_token().token_value
             print(f'1 parse_statement IDENTIFIER: {self.current_token()}')
             self.buffer+=1
             print(f'2 parse_statement IDENTIFIER: {self.current_token()}')
             if self.current_token().token_value == '<-':
                 self.buffer+=1
                 print(f'3 parse_statement IDENTIFIER: {self.current_token()}')
-                if self.parse_expression():
+                parse_expression = self.parse_expression()
+                print(f'parse_expression aqui: {parse_expression}')
+                input()
+                if parse_expression:
                     print(f'4 parse_statement IDENTIFIER: {self.current_token()}')
-                    return True
+                    # return f'{identifier} <- {parse_expression}'
+                    return f'{identifier} = {parse_expression}'
             return False
 
         if self.current_token().token_value == 'CALL':
             print(f'1 parse_statement CALL: {self.current_token()}')
             self.buffer+=1
             if self.current_token().token_class.name == 'IDENTIFIER':
+                identifier = self.current_token().token_value
                 print(f'2 parse_statement CALL: {self.current_token()}')
                 self.buffer+=1
                 print(f'3 parse_statement CALL: {self.current_token()}')
-                return True
+                return f'{identifier}()'
             return False
             
         if self.current_token().token_value == 'BEGIN':
             print(f'1 parse_statement BEGIN: {self.current_token()}')
             self.buffer+=1
+            # begin = 'BEGIN'
+            begin = ''
             if self.current_token().token_class.name in ['STATEMENT','IDENTIFIER']:
+                # identifier = self.current_token().token_value
                 print(f'2 parse_statement BEGIN: {self.current_token()}')
-                if not self.parse_compound_statement():
-                    return False
+                begin = f'{self.parse_compound_statement()}'
+
+                # if not self.parse_compound_statement():
+                #     return False
+                
             if self.current_token().token_value == 'END':
                 print(f'3 parse_statement BEGIN: {self.current_token()}')
                 self.buffer+=1
                 print(f'4 parse_statement BEGIN: {self.current_token()}')
-                return True
+                #return f'{begin} END'
+                return f'{begin}'
             return False
 
         if self.current_token().token_value == 'IF':
+            if_statement = 'if'
             self.buffer+=1
             if self.current_token().token_value == 'NOT':
+                if_statement = f'{if_statement} not'
                 self.buffer+=1
-            if self.parse_condition():
+            parse_condition = self.parse_condition()
+            if parse_condition:
                 if self.current_token().token_value == 'THEN':
                     self.buffer+=1
-                    if self.parse_statement():
-                        return True
+                    parse_statement = self.parse_statement()
+                    if parse_statement:
+                        return f'{if_statement} ({parse_condition}): {parse_statement}'
             return False
 
         if self.current_token().token_value == 'WHILE':
+            # while_statement = 'WHILE'
+            while_statement = 'while'
             self.buffer+=1
             if self.current_token().token_value == 'NOT':
+                while_statement = f'{while_statement} not'
                 self.buffer+=1
-            if self.parse_condition():
+            parse_condition = self.parse_condition()
+            if parse_condition:
                 if self.current_token().token_value == 'DO':
                     self.buffer+=1
-                    if self.parse_statement():
-                        return True
+                    parse_statement = self.parse_statement()
+                    if parse_statement:
+                        # return f'{while_statement} {parse_condition} DO {parse_statement}'
+                        return f'{while_statement} ({parse_condition}): {parse_statement}'
             return False
 
         if self.current_token().token_value == 'PRINT':
             self.buffer+=1
-            if self.parse_expression():
-                return True
+            parse_expression = self.parse_expression()
+            if parse_expression:
+                # return f'PRINT {parse_expression}'
+                return f'print({parse_expression})'
             return False
     
     def parse_procedures(self):
@@ -196,118 +225,159 @@ class Parser:
                         if self.current_token().token_value == ';':
                             self.buffer+=1
                             print(f'6 parse_procdecl: {self.current_token()}')
-                            #print(f'\033[94mPROCEDURE {identifier};\n{parse_block};\033[0m')
+                            print(f'\033[94mPROCEDURE {identifier};\n{parse_block};\033[0m')
                             #input()
-                            return f'PROCEDURE {identifier};\n{parse_block};'
+                            # return f'PROCEDURE {identifier};\n{parse_block};'
+                            return f'def {identifier}():\n{parse_block}'
                         print(f'\033[91m\nERROR IN PARSE_PROCDECL: {self.current_token()}\033[0m')
                     print(f'\033[91m\nERROR IN PARSE_PROCDECL: {self.current_token()}\033[0m')
         return False
     
     def parse_compound_statement(self):
         print(f'1 parse_compound_statement: {self.current_token()}')
-        if self.parse_statement():
+        parse_statement = self.parse_statement()
+        if parse_statement:
             print(f'2 parse_compound_statement: {self.current_token()}')
             if self.current_token().token_value == ';':
                 print(f'3 parse_compound_statement: {self.current_token()}')
                 self.buffer+=1
                 if self.current_token().token_class.name in ['STATEMENT','IDENTIFIER']:
                     print(f'4 parse_compound_statement: {self.current_token()}')
-                    if not self.parse_compound_statement():
+                    parse_compound_statement = self.parse_compound_statement()
+                    if not parse_compound_statement:
                         return False
-                return True
+                    parse_statement = f'{parse_statement}\n {parse_compound_statement}'
+                print(f'\033[91mparse_statement: {parse_statement};\033[0m')
+                input()
+                return f'{parse_statement}'
         return False
     
     def parse_expression(self):
         print(f'1 parse_expression: {self.current_token()}')
+        parse_expression = ''
         if self.current_token().token_class.name == 'SIGN':
-            if not self.parse_sign(self):
+            parse_sign = self.parse_sign()
+            if not parse_sign:
                 return False
+            parse_expression = f'{parse_sign}'
         print(f'2 parse_expression: {self.current_token()}')
-        if self.parse_term():
+        parse_term = self.parse_term()
+        if parse_term:
             print(f'3 parse_expression: {self.current_token()}')
+            parse_expression = f'{parse_expression}{parse_term}'
             if self.current_token().token_class.name == 'SIGN':
                 print(f'4 parse_expression: {self.current_token()}')
-                if not self.parse_terms():
+                parse_terms = self.parse_terms()
+                if not parse_terms:
                     return False
+                parse_expression = f'{parse_expression} {parse_terms}'
                 print(f'5 parse_expression: {self.current_token()}')
-            return True
+            return f'{parse_expression}'
         return False
         
     def parse_sign(self):
         print(f'1 parse_sign: {self.current_token()}')
         if self.current_token().token_class.name == 'SIGN':
+            sign = self.current_token().token_value
             self.buffer+=1
             print(f'2 parse_sign: {self.current_token()}')
-            return True
+            return f'{sign}'
         return False
     
     def parse_term(self):
-        print(f'1 parse_term: {self.token_list[self.buffer]}')
-        if self.parse_factor():
-            print(f'2 parse_term: {self.token_list[self.buffer]}')
+        print(f'1 parse_term: {self.current_token()}')
+        parse_factor = self.parse_factor()
+        if parse_factor:
+            print(f'2 parse_term: {self.current_token()}')
             if self.current_token().token_value in ['*','/']:
-                if not self.parse_factors():
+                parse_factors = self.parse_factors()
+                if not parse_factors:
                     return False
-                print(f'3 parse_term: {self.token_list[self.buffer]}')
-            return True
+                parse_factor = f'{parse_factor} {parse_factors}'
+                print(f'3 parse_term: {self.current_token()}')
+            return f'{parse_factor}'
         return False
     
     def parse_terms(self):
         print(f'1 parse_terms: {self.current_token()}')
         if self.current_token().token_class.name == 'SIGN':
+            sign = self.current_token().token_value
             self.buffer+=1
             print(f'2 parse_terms: {self.current_token()}')
-            if self.parse_term():
+            parse_term = self.parse_term()
+            if parse_term:
                 print(f'3 parse_terms: {self.current_token()}')
-                return True
+                return f'{sign} {parse_term}'
         return False
     
     def parse_factor(self):
         print(f'1 parse_factor: {self.current_token()}')
         if self.current_token().token_class.name in ['IDENTIFIER','NUMBER']:
+            factor = self.current_token().token_value
             self.buffer+=1
-            return True
+            return f'{factor}'
         print(f'2 parse_factor: {self.current_token()}')
         if self.current_token().token_value == '(':
             self.buffer+=1
             print(f'3 parse_factor: {self.current_token()}')
-            if self.parse_expression():
+            parse_expression = self.parse_expression()
+            if parse_expression:
                 print(f'4 parse_factor: {self.current_token()}')
                 if self.current_token().token_value == ')':
                     self.buffer+=1
                     print(f'5 parse_factor: {self.current_token()}')
-                    return True
+                    return f'({parse_expression})'
         return False
     
     def parse_factors(self):
         print(f'1 parse_factors: {self.current_token()}')
         if self.current_token().token_value in ['/','*']:
+            sign = self.current_token().token_value
             self.buffer+=1
             print(f'2 parse_factors: {self.current_token()}')
-            if self.parse_factor():
+            parse_factor = self.parse_factor()
+            if parse_factor:
                 print(f'3 parse_factors: {self.current_token()}')
-                return True
+                return f'{sign} {parse_factor}'
         return False
     
     def parse_condition(self):
         print(f'parse_condition: {self.current_token()}')
         if self.current_token().token_value in ['ODD','EVEN']:
+            condition = self.current_token().token_value
             self.buffer+=1
-            if self.parse_expression():
-                return True
+            parse_expression = self.parse_expression()
+            if parse_expression:
+                if condition == 'ODD':
+                    return f'({parse_expression}) % 2 != 0'
+                if condition == 'EVEN':
+                    return f'({parse_expression}) % 2 == 0'
             return False
-        if self.parse_expression():
-            if self.parse_relation():
-                if self.parse_expression():
-                    return True
+        parse_expression = self.parse_expression()
+        per = False
+        if parse_expression:
+            parse_relation, per = self.parse_relation()
+            if parse_relation:
+                parse_expression_inside = self.parse_expression()
+                if parse_expression:
+                    if per:
+                        return f'{parse_expression} {parse_relation} {parse_expression_inside} == 0'
+                    return f'{parse_expression} {parse_relation} {parse_expression_inside}'
         return False
     
     def parse_relation(self):
         print(f'1 parse_relation: {self.current_token()}')
+        per = False
         if self.current_token().token_class.name == 'RELATION':
+            relation = self.current_token().token_value
+            if self.current_token().token_value == '/?':
+                relation = '%'
+                per = True
+            if self.current_token().token_value == '=':
+                relation = '=='
             self.buffer+=1
             print(f'2 parse_relation: {self.current_token()}')
-            return True
+            return relation, per
         return False
 
     def parse_constants(self):
@@ -318,7 +388,8 @@ class Parser:
             if self.current_token().token_value == ';':
                 self.buffer+=1
                 print(f'3 parse_constants: {self.current_token()}')
-                return f'{parse_constdecl};'
+                # return f'CONST {parse_constdecl};'
+                return f'{parse_constdecl}'
         return False
 
     def parse_constdecl(self):
@@ -334,6 +405,8 @@ class Parser:
                     return False
                 parse_constdef = f'{parse_constdef}, {parse_constdecl}'
                 print(f'4 parse_constdecl: {self.current_token()}')
+                print(f'\033[92m', parse_constdef ,'\033[0m')
+                input()
             return parse_constdef
         
     def parse_constdef(self):
@@ -383,7 +456,10 @@ while True:
 # [print(e) for e in token_list if e != None]
 # print(f"\n\n###############################################\n\n")
 parser = Parser(lex, token_list)
-if parser.parse_program():
+prog = parser.parse_program()
+if prog:
     print("\n:)")
+    print("\n===============================\n")
+    print(f'\033[93m{prog}\033[0m')
 else:
     print(f"\033[91m\nSOMETHING WENT WHONG\033[0m")
