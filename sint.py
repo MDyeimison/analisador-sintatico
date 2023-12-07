@@ -11,6 +11,9 @@ class Parser:
     def current_token(self):
         return self.token_list[self.buffer]
     
+    def add_tab_to_newlines(self, s):
+        return s.replace("\n", "\n\t")
+    
     def parse_program(self):
         print(f'parse_program: {self.current_token()}')
         parse_block = self.parse_block()
@@ -31,19 +34,14 @@ class Parser:
             parse_constants = self.parse_constants()
             if not parse_constants:
                 return False
-            parse_block = f'{parse_block}\n{parse_constants}\n'
-            print(f'\033[94mCONST {parse_constants}\033[0m')
-            input()
+            parse_block = f'{parse_constants}'
             count+=1
 
         if self.current_token().token_value == 'VAR':
             parse_variables = self.parse_variables()
             if not parse_variables:
                 return False
-            #parse_block = f'{parse_block}\n{parse_variables}\n'
             parse_block = f'{parse_block}\n{parse_variables}\n'
-            print(f'\033[94mVAR {parse_variables}\033[0m')
-            input()
             count+=1
 
         if self.current_token().token_value == 'PROCEDURE':
@@ -51,8 +49,6 @@ class Parser:
             if not parse_procedures:
                 return False
             parse_block = f'{parse_block}\n{parse_procedures}\n'
-            print(f'\033[94m{parse_procedures}\033[0m')
-            input()
             count+=1
         
         if self.current_token().token_class.name in ['STATEMENT','IDENTIFIER']:
@@ -60,8 +56,6 @@ class Parser:
             if not parse_statement:
                 return False
             parse_block = f'{parse_block}\n{parse_statement}\n'
-            print(f'\033[94m{parse_statement}\033[0m')
-            input()
             count+=1
 
         if (count == 0 and self.buffer == initial_index) or count >= 0:
@@ -79,7 +73,6 @@ class Parser:
                 if self.current_token().token_value == ';':
                     self.buffer+=1
                     print(f'4 parse_variables: {self.current_token()}')
-                    # return f'VAR {parse_vardecl};'
                     return f'{parse_vardecl}'
         return False
     
@@ -95,7 +88,7 @@ class Parser:
                 parse_vardecl = self.parse_vardecl()
                 if not parse_vardecl:
                     return False
-                identifier = f'{identifier}, {parse_vardecl}'
+                identifier = f'{identifier}; {parse_vardecl}'
                 print(f'4 parse_vardecl: {self.current_token()}')
             return f'{identifier}'
         return False
@@ -110,11 +103,8 @@ class Parser:
                 self.buffer+=1
                 print(f'3 parse_statement IDENTIFIER: {self.current_token()}')
                 parse_expression = self.parse_expression()
-                print(f'parse_expression aqui: {parse_expression}')
-                input()
                 if parse_expression:
                     print(f'4 parse_statement IDENTIFIER: {self.current_token()}')
-                    # return f'{identifier} <- {parse_expression}'
                     return f'{identifier} = {parse_expression}'
             return False
 
@@ -132,21 +122,15 @@ class Parser:
         if self.current_token().token_value == 'BEGIN':
             print(f'1 parse_statement BEGIN: {self.current_token()}')
             self.buffer+=1
-            # begin = 'BEGIN'
             begin = ''
             if self.current_token().token_class.name in ['STATEMENT','IDENTIFIER']:
-                # identifier = self.current_token().token_value
                 print(f'2 parse_statement BEGIN: {self.current_token()}')
                 begin = f'{self.parse_compound_statement()}'
-
-                # if not self.parse_compound_statement():
-                #     return False
                 
             if self.current_token().token_value == 'END':
                 print(f'3 parse_statement BEGIN: {self.current_token()}')
                 self.buffer+=1
                 print(f'4 parse_statement BEGIN: {self.current_token()}')
-                #return f'{begin} END'
                 return f'{begin}'
             return False
 
@@ -162,11 +146,11 @@ class Parser:
                     self.buffer+=1
                     parse_statement = self.parse_statement()
                     if parse_statement:
-                        return f'{if_statement} ({parse_condition}): {parse_statement}'
+                        result = self.add_tab_to_newlines(f'{if_statement} ({parse_condition}):\n{parse_statement}\n')
+                        return result
             return False
 
         if self.current_token().token_value == 'WHILE':
-            # while_statement = 'WHILE'
             while_statement = 'while'
             self.buffer+=1
             if self.current_token().token_value == 'NOT':
@@ -178,33 +162,33 @@ class Parser:
                     self.buffer+=1
                     parse_statement = self.parse_statement()
                     if parse_statement:
-                        # return f'{while_statement} {parse_condition} DO {parse_statement}'
-                        return f'{while_statement} ({parse_condition}): {parse_statement}'
+                        result = self.add_tab_to_newlines(f'{while_statement} ({parse_condition}):\n{parse_statement}')
+                        return result
             return False
 
         if self.current_token().token_value == 'PRINT':
             self.buffer+=1
             parse_expression = self.parse_expression()
             if parse_expression:
-                # return f'PRINT {parse_expression}'
-                return f'print({parse_expression})'
+                result = self.add_tab_to_newlines(f'print({parse_expression})\n')
+                return result
             return False
     
     def parse_procedures(self):
         print(f'1 parse_procedures: {self.current_token()}')
         parse_procdecl = self.parse_procdecl()
         if parse_procdecl:
+            parse_procdecl = f'{parse_procdecl}\n'
             print(f'2 parse_procedures: {self.current_token()}')
             if self.current_token().token_value == 'PROCEDURE':
                 parse_procedures_recall = self.parse_procedures()
                 if not parse_procedures_recall:
                     print(f'3 parse_procedures: {self.current_token()}')
                     return False
-                parse_procdecl = f'{parse_procdecl}\n{parse_procedures_recall}'
-                # parse_procdecl = f'{parse_procdecl}\n{parse_procedures_recall}'
-            # print(f'\033[94mPROCEDURE {parse_procdecl}\033[0m')
-            # input()
-            return f'{parse_procdecl}'
+                parse_procdecl = f'{parse_procdecl}{parse_procedures_recall}'
+            result = self.add_tab_to_newlines(f'{parse_procdecl}')
+            return result
+            
         return False
 
     def parse_procdecl(self):
@@ -225,9 +209,6 @@ class Parser:
                         if self.current_token().token_value == ';':
                             self.buffer+=1
                             print(f'6 parse_procdecl: {self.current_token()}')
-                            print(f'\033[94mPROCEDURE {identifier};\n{parse_block};\033[0m')
-                            #input()
-                            # return f'PROCEDURE {identifier};\n{parse_block};'
                             return f'def {identifier}():\n{parse_block}'
                         print(f'\033[91m\nERROR IN PARSE_PROCDECL: {self.current_token()}\033[0m')
                     print(f'\033[91m\nERROR IN PARSE_PROCDECL: {self.current_token()}\033[0m')
@@ -246,9 +227,7 @@ class Parser:
                     parse_compound_statement = self.parse_compound_statement()
                     if not parse_compound_statement:
                         return False
-                    parse_statement = f'{parse_statement}\n {parse_compound_statement}'
-                print(f'\033[91mparse_statement: {parse_statement};\033[0m')
-                input()
+                    parse_statement = f'{parse_statement}\n{parse_compound_statement}'
                 return f'{parse_statement}'
         return False
     
@@ -388,7 +367,6 @@ class Parser:
             if self.current_token().token_value == ';':
                 self.buffer+=1
                 print(f'3 parse_constants: {self.current_token()}')
-                # return f'CONST {parse_constdecl};'
                 return f'{parse_constdecl}'
         return False
 
@@ -403,10 +381,8 @@ class Parser:
                 parse_constdecl = self.parse_constdecl()
                 if not parse_constdecl:
                     return False
-                parse_constdef = f'{parse_constdef}, {parse_constdecl}'
+                parse_constdef = f'{parse_constdef}; {parse_constdecl}'
                 print(f'4 parse_constdecl: {self.current_token()}')
-                print(f'\033[92m', parse_constdef ,'\033[0m')
-                input()
             return parse_constdef
         
     def parse_constdef(self):
@@ -453,8 +429,7 @@ while True:
     token_list.append(token_atual)
   else:
       print(f'\033[91m', token_atual ,'\033[0m')
-# [print(e) for e in token_list if e != None]
-# print(f"\n\n###############################################\n\n")
+print(f"\n\n###############################################\n\n")
 parser = Parser(lex, token_list)
 prog = parser.parse_program()
 if prog:
