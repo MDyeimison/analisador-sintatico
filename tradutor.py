@@ -178,15 +178,15 @@ class Parser:
         print(f'1 parse_procedures: {self.current_token()}')
         parse_procdecl = self.parse_procdecl()
         if parse_procdecl:
-            parse_procdecl = f'{parse_procdecl}\n'
+            parse_procdecl = self.add_tab_to_newlines(f'{parse_procdecl}')
             print(f'2 parse_procedures: {self.current_token()}')
             if self.current_token().token_value == 'PROCEDURE':
                 parse_procedures_recall = self.parse_procedures()
                 if not parse_procedures_recall:
                     print(f'3 parse_procedures: {self.current_token()}')
                     return False
-                parse_procdecl = f'{parse_procdecl}{parse_procedures_recall}'
-            result = self.add_tab_to_newlines(f'{parse_procdecl}')
+                parse_procdecl = f'{parse_procdecl}\n{parse_procedures_recall}'
+            result = f'{parse_procdecl}'
             return result
             
         return False

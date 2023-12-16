@@ -17,14 +17,13 @@ def checkprime():
 def primes():
 
         arg = 2
-        while (arg < max):
+        while (((arg + max)) % 2 != 0):
                 checkprime()
                 if (ret == 1):
                         print(arg)
 
 
                 arg = arg + 1
-
 
 
 primes()
